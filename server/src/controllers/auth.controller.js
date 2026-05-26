@@ -1,11 +1,11 @@
-import userModel from "../models/user.model";
+import userModel from "../models/user.model.js";
 import bcrypt from "bcrypt";
 import {
   generateAccessToken,
   generateRefreshToken,
-} from "../utils/generateTokens";
+} from "../utils/generateTokens.js";
 
-const registerController = async (req, res) => {
+export const registerController = async (req, res) => {
   const { name, email, password } = req.body;
 
   if (!name || !email || !password) {
@@ -48,6 +48,4 @@ const registerController = async (req, res) => {
     .json({ message: "User created successfully", user: newUser });
 };
 
-const loginController = async (req, res) => {};
-
-export { registerController, loginController };
+export const loginController = async (req, res) => {};
