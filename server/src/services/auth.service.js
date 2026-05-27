@@ -1,5 +1,7 @@
 import userModel from "../models/user.model.js";
+import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
+import config from "../config/config.js";
 import {
   generateAccessToken,
   generateRefreshToken,
@@ -29,6 +31,9 @@ const registerService = async (data) => {
 
     const accessToken = generateAccessToken(newUser._id);
     const refreshToken = generateRefreshToken(newUser._id);
+
+    newUser.refreshToken = refreshToken;
+    await newUser.save();
 
     return {
       accessToken,
@@ -63,6 +68,9 @@ const loginService = async (data) => {
     const accessToken = generateAccessToken(userExists._id);
     const refreshToken = generateRefreshToken(userExists._id);
 
+    userExists.refreshToken = refreshToken;
+    await userExists.save();
+
     return {
       accessToken,
       refreshToken,
@@ -73,4 +81,26 @@ const loginService = async (data) => {
   }
 };
 
-export { registerService, loginService };
+const getAccessTokenService = async (refreshToken) => {
+  const decodedToken = jwt.verify(refreshToken, config.JWT_REFRESH_SECRET);
+
+  if (!decodedToken) {
+    throw new Error("Unauthorized");
+  }
+
+  const user = await userModel.findById(decodedToken.id);
+
+  if (!user) {
+    throw new Error("Unauthorized");
+  }
+
+  if (user.refreshToken !== refreshToken) {
+    throw new Error("Unauthorized");
+  }
+
+  const accessToken = generateAccessToken(user._id);
+
+  return accessToken;
+};
+
+export { registerService, loginService, getAccessTokenService };

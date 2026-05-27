@@ -2,9 +2,13 @@ import {
   generateAccessToken,
   generateRefreshToken,
 } from "../utils/generateTokens.js";
-import { registerService, loginService } from "../services/auth.service.js";
+import {
+  registerService,
+  loginService,
+  getAccessTokenService,
+} from "../services/auth.service.js";
 
-export const registerController = async (req, res) => {
+const registerController = async (req, res) => {
   const { accessToken, refreshToken, newUser } = await registerService(
     req.body,
   );
@@ -16,7 +20,7 @@ export const registerController = async (req, res) => {
     maxAge: 15 * 60 * 1000,
   });
 
-  res.cookie("refresshToken", refreshToken, {
+  res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
     samesite: "lax",
     secure: false,
@@ -28,7 +32,7 @@ export const registerController = async (req, res) => {
     .json({ message: "User created successfully", user: newUser });
 };
 
-export const loginController = async (req, res) => {
+const loginController = async (req, res) => {
   const { accessToken, refreshToken, userExists } = await loginService(
     req.body,
   );
@@ -40,7 +44,7 @@ export const loginController = async (req, res) => {
     maxAge: 15 * 60 * 1000,
   });
 
-  res.cookie("refresshToken", refreshToken, {
+  res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
     samesite: "lax",
     secure: false,
@@ -51,3 +55,26 @@ export const loginController = async (req, res) => {
     .status(201)
     .json({ message: "User Logged in successfully", user: userExists });
 };
+
+const getAccessTokenController = async (req, res) => {
+  const refreshToken = req.cookies.refreshToken;
+
+  if (!refreshToken) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  const accessToken = await getAccessTokenService(refreshToken);
+
+  res.cookie("accessToken", accessToken, {
+    httpOnly: true,
+    samesite: "lax",
+    secure: false,
+    maxAge: 15 * 60 * 1000,
+  });
+
+  return res
+    .status(200)
+    .json({ message: "Access token generated successfully" });
+};
+
+export { registerController, loginController, getAccessTokenController };
