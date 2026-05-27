@@ -7,7 +7,7 @@ import {
 
 const registerService = async (data) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password } = data;
 
     if (!name || !email || !password) {
       return res.status(400).json({ message: "All fields are required" });
@@ -40,4 +40,37 @@ const registerService = async (data) => {
   }
 };
 
-export { registerService };
+const loginService = async (data) => {
+  try {
+    const { email, password } = data;
+
+    if (!email || !password) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    const userExists = await userModel.findOne({ email });
+
+    if (!userExists) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const hashpassword = bcrypt.compareSync(password, userExists.password);
+
+    if (!hashpassword) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    const accessToken = generateAccessToken(userExists._id);
+    const refreshToken = generateRefreshToken(userExists._id);
+
+    return {
+      accessToken,
+      refreshToken,
+      userExists,
+    };
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
+export { registerService, loginService };
